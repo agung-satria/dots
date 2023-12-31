@@ -1,0 +1,141 @@
+# Edit line in vim with ctrl-e:
+autoload edit-command-line; zle -N edit-command-line
+bindkey '^e' edit-command-line
+
+# Use lf to switch directories and bind it to ctrl-o
+cd_lf () {
+  tmp="$(mktemp -uq)"
+  trap 'rm -f $tmp >/dev/null 2>&1 && trap - HUP INT QUIT TERM PWR EXIT' HUP INT QUIT TERM PWR EXIT
+  lf -last-dir-path="$tmp" "$@"
+  if [ -f "$tmp" ]; then
+    dir="$(cat "$tmp")"
+    [ -d "$dir" ] && [ "$dir" != "$(pwd)" ] && cd "$dir"
+  fi
+}
+bindkey -s '^o' '^ucd_lf\n'
+
+# Use fzf to find file and go to the directory (binding: ctrl-f)
+fzf_search() {
+  # selected_file=$(find ~ -type f | fzf) # $HOME directory
+  selected_file=$(find . | fzf) # current directory
+  if [ -n "$selected_file" ]; then
+    file_directory=$(dirname "$selected_file")
+    cd "$file_directory" || return
+    # List only the selected file  (using exa)
+    # exa --color=always --group-directories-first --icons "$selected_file"
+  else
+    echo "No file selected."
+  fi
+}
+bindkey -s '^s' '^ufzf_search\n'
+
+# Use fzf_edit <directory>
+# Leave the argument empty to use current directory
+fzf_edit() {
+  local destination="${1:-.}"
+  local file
+
+  file=$(find "$destination" -type f -name ".*" -o -type f -print 2>/dev/null | fzf --preview "batcat --color=always {}" --height=80%)
+
+  if [ -n "$file" ]; then
+    $EDITOR "$file"
+  else
+    echo "No file selected."
+  fi
+}
+alias vv='fzf_edit'
+alias se='fzf_edit ~/.local/bin'
+alias ce='fzf_edit ~/.dotfiles/.config'
+alias cec='fzf_edit ~/.config'
+
+bindkey -s '^f' '^utmux-sessionizer\n'
+
+# Add this to easily extract compressed files, use `ex <filename>`
+ex() {
+  if [ -f $1 ] ; then
+    case $1 in
+      *.tar.bz2)   tar xvjf $1     ;;
+      *.tar.gz)    tar xvzf $1     ;;
+      *.bz2)       bunzip2 $1      ;;
+      *.rar)       unrar x $1      ;;
+      *.gz)        gunzip $1       ;;
+      *.tar)       tar xvf $1      ;;
+      *.tbz2)      tar xvjf $1     ;;
+      *.tgz)       tar xvzf $1     ;;
+      *.zip)       unzip $1        ;;
+      *.Z)         uncompress $1   ;;
+      *.7z)        7z x $1         ;;
+      *)           echo "'$1' cannot be extracted via >ex<" ;;
+    esac
+  else
+    echo "'$1' is not a valid file!"
+  fi
+}
+
+# Changing "ls" to "exa"
+alias \
+  ls="exa --color=always --group-directories-first --icons" \
+  ll="exa -l --color=always --group-directories-first --icons" \
+  la="exa -la --color=always --group-directories-first --icons" \
+  lsc="exa -la --sort=changed --color=always --group-directories-first --icons" \
+  lsm="exa -la --sort=modified --color=always --group-directories-first --icons" \
+  lsa="exa -la --sort=accessed --color=always --group-directories-first --icons" \
+  lsn="exa -la --sort=created --color=always --group-directories-first --icons" \
+  lss="exa -la --sort=size --color=always --group-directories-first --icons" \
+  lse="exa -la --sort=extension --color=always --group-directories-first --icons" \
+  lst="exa -la --sort=type --color=always --group-directories-first --icons" \
+  lt="exa -aT --color=always --group-directories-first --icons" \
+  l.="exa -a | grep "^\."" \
+
+# Colorize grep output (good for log files)
+alias \
+  grep="grep --color=auto" \
+  egrep="egrep --color=auto" \
+  fgrep="fgrep --color=auto" \
+  diff="diff --color=auto" \
+
+# Shorten
+alias \
+  v="nvim" \
+  tmux="tmux -f $TMUX_CONFIG" \
+  tK="tmux kill-server && echo 'All tmux session killed'" \
+  f="lfub" \
+  lf="lfub" \
+  F="$FMGR ." \
+  c="clear" \
+  bc="bc -ql" \
+  fd="fdfind" \
+  bat="batcat" \
+  trashput="trash-put" \
+  trashempty="trash-empty" \
+  trashrm="trash-rm" \
+  trashlist="trash-list" \
+  trashrestore="trash-restore" \
+  neofetch="flashfetch" \
+
+## Pacman
+# alias \
+#   autoremove="sudo pacman -Rns $(pacman -Qtdq)" \
+#   lso="pacman -Qtdq" \
+#   update-grub="sudo grub-mkconfig -o /boot/grub/grub.cfg" \
+
+## APT
+alias \
+  autoremove="sudo apt autoremove" \
+  lu="apt list --upgradable" \
+
+## LAMP services
+# 'httpd' for arch, 'apache2' for debian
+alias \
+  startlamp="sudo systemctl start apache2.service && sudo systemctl start mariadb.service && lampstatus" \
+  stoplamp="sudo systemctl stop apache2.service && sudo systemctl stop mariadb.service && lampstatus" \
+  startapache="sudo systemctl start apache2.service && lampstatus" \
+  stopapache="sudo systemctl stop apache2.service && lampstatus" \
+  restartapache="sudo systemctl restart apache2.service && lampstatus" \
+  enableapache="sudo systemctl enable apache2.service && lampstatus" \
+  disableapache="sudo systemctl disable apache2.service && lampstatus" \
+  startmariadb="sudo systemctl start mariadb.service && lampstatus" \
+  stopmariadb="sudo systemctl stop mariadb.service && lampstatus" \
+  restartmariadb="sudo systemctl restart mariadb.service && lampstatus" \
+  enablemariadb="sudo systemctl enable mariadb.service && lampstatus" \
+  disablemariadb="sudo systemctl disable mariadb.service && lampstatus" \

@@ -1,0 +1,104 @@
+# History in cache directory:
+HISTSIZE=10000000
+SAVEHIST=10000000
+HISTFILE=~/.cache/.zsh_history
+setopt HIST_EXPIRE_DUPS_FIRST
+setopt HIST_IGNORE_DUPS
+setopt HIST_IGNORE_ALL_DUPS
+setopt HIST_IGNORE_SPACE
+setopt HIST_FIND_NO_DUPS
+setopt HIST_SAVE_NO_DUPS
+
+stty stop undef		# Disable ctrl-s to freeze terminal.
+
+# Basic auto/tab complete:
+autoload -U compinit
+zstyle ':completion:*' menu select
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'
+zmodload zsh/complist
+compinit
+_comp_options+=(globdots)  # Include hidden files.
+
+# vi mode
+bindkey -v
+export KEYTIMEOUT=1
+
+# Use vim keys in tab complete menu:
+bindkey -M menuselect 'h' vi-backward-char
+bindkey -M menuselect 'k' vi-up-line-or-history
+bindkey -M menuselect 'l' vi-forward-char
+bindkey -M menuselect 'j' vi-down-line-or-history
+bindkey -v '^?' backward-delete-char
+
+bindkey "^P" history-beginning-search-backward
+bindkey "^N" history-beginning-search-forward
+
+function zsh_add_file() {
+  [ -f "$ZDOTDIR/$1" ] && source "$ZDOTDIR/$1"
+}
+zsh_add_file "prompt" # <- ZSH Prompt
+zsh_add_file "aliasrc"
+
+# eval "$(starship init zsh)" # <- Starship Prompt
+
+## abbreviation start
+# declare a list of expandable aliases to fill up later
+typeset -a ealiases
+ealiases=()
+
+# write a function for adding an alias to the list mentioned above
+function abbrev-alias() {
+alias $1
+ealiases+=(${1%%\=*})
+}
+
+# expand any aliases in the current line buffer
+function expand-ealias() {
+if [[ $LBUFFER =~ "\<(${(j:|:)ealiases})\$" ]]; then
+  zle _expand_alias
+  zle expand-word
+fi
+zle magic-space
+}
+zle -N expand-ealias
+
+# Bind the space key to the expand-alias function above, so that space will expand any expandable aliases
+bindkey ' '        expand-ealias
+bindkey '^ '       magic-space     # control-space to bypass completion
+bindkey -M isearch " "      magic-space     # normal space during searches
+
+# A function for expanding any aliases before accepting the line as is and executing the entered command
+expand-alias-and-accept-line() {
+expand-ealias
+zle .backward-delete-char
+zle .accept-line
+}
+zle -N accept-line expand-alias-and-accept-line
+
+# aliases
+abbrev-alias g="git"
+abbrev-alias gst="git status"
+abbrev-alias t="tmux"
+abbrev-alias ts="tmux-sessionizer"
+abbrev-alias tsn="tmux-sessionizer-autovim"
+abbrev-alias ta="tmux-attacher"
+abbrev-alias tk="tmux-killer"
+abbrev-alias tl="tmux ls"
+abbrev-alias tn="tmux new-session -s "
+abbrev-alias trn="tmux rename-session -t "
+abbrev-alias lm="lampstatus"
+abbrev-alias ns="nsxiv"
+abbrev-alias zt="zathura"
+abbrev-alias lsuser="awk -F':' '{ print $1}' /etc/passwd"
+abbrev-alias lsgroup="cut -d: -f1 /etc/group | sort"
+abbrev-alias refont="sudo fc-cache -fv"
+abbrev-alias mp4tomp3="ffmpeg -i video.mp4 -vn -acodec libmp3lame -ac 2 -ab 160k -ar 48000 audio.mp3"
+abbrev-alias webcamrecord="ffmpeg -y -i /dev/video0 output.mkv"
+abbrev-alias mk="make && sudo make install"
+abbrev-alias lbn="pidof -x lbnrunner && pidof -x lbnscript"
+## abbreviation end
+
+# Load plugins cloned in $ZPLUGDIR; should be last.
+source $ZPLUGDIR/fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh 2>/dev/null
+source $ZPLUGDIR/zsh-autosuggestions/zsh-autosuggestions.plugin.zsh 2>/dev/null
+source $ZPLUGDIR/zsh-autopair/autopair.plugin.zsh 2>/dev/null
