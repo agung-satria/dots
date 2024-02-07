@@ -1,0 +1,10 @@
+#!/bin/sh
+
+case $BLOCK_BUTTON in
+	1) notify-send "This Month" "$(cal | sed "s/\<$(date +'%e')\>/<b><span color='#73C1D3'>&<\/span><\/b>/")" && notify-send "Appointments" "$(calcurse -d3)" ;;
+	3) setsid -f "$TERMINAL" -c float-st -e calcurse ;;
+	6) "$TERMINAL" -e "$EDITOR" "$0" ;;
+esac
+
+echo "[$(date "+%a %b %d] [%H:%M"])"
+# echo "[$(date "+%a %b %d %H:%M"])"

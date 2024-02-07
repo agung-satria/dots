@@ -1,0 +1,22 @@
+#!/bin/sh
+
+case $BLOCK_BUTTON in
+	4) light -A 5 ;;
+	5) light -U 5 ;;
+	6) "$TERMINAL" -e "$EDITOR" "$0" ;;
+esac
+
+for battery in /sys/class/power_supply/BAT?*; do
+	[ -n "${capacity+x}" ] && printf " "
+	case "$(cat "$battery/status" 2>&1)" in
+		"Full") status="✓" ;;
+		"Discharging") status="Bat:" ;;
+		"Charging") status="Bat:" ;;
+		"Not charging") status="BAT:" ;;
+		"Unknown") status="?" ;;
+		*) exit 1 ;;
+	esac
+	capacity="$(cat "$battery/capacity" 2>&1)"
+	[ "$status" = "Bat:" ] && [ "$capacity" -le 15 ] && warn="!"
+	printf "[%s%s%d%%]" "$warn" "$status" "$capacity"; unset warn
+done && printf "\\n"
