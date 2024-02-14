@@ -111,7 +111,6 @@ alias \
   trashrm="trash-rm" \
   trashlist="trash-list" \
   trashrestore="trash-restore" \
-  neofetch="flashfetch" \
 
 ## Pacman
 # alias \
